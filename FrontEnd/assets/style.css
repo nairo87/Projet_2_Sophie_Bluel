@@ -126,11 +126,24 @@ li:hover {
 	margin-bottom: 1em;
 }
 .div-container {
-	width: 70%;
+	width: 580px;
 	display: flex;
-	justify-content: space-around;
-	margin: 0 auto;
+	justify-content: space-evenly;
+	margin: 35px auto;
 }
+.div-container > *{
+	padding: 10px 20px;
+	border: 1px solid #1D6154;
+	border-radius: 25px ;
+	font-family: 'Syne';
+	color: #1D6154;
+	cursor: pointer;
+}
+.div-container > *:hover {
+	background-color: #1D6154;
+	color: white;
+}
+
 .gallery {
 	width: 100%;
 	display: grid;

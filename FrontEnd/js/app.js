@@ -108,7 +108,7 @@ function displayAdminMode() {
     const editBanner = document.createElement("div");
     editBanner.className = "edit";
     editBanner.innerHTML =
-      '<p><a href="#modal1" class="js-modal"><i class="fa-regular fa-pen-to-square"></i>Mode édition</a></p>';
+      '<p><a href="#modal1" class="js-modal"><i class="fa-regular fa-pen-to-square"></i> Mode édition</a></p>';
     document.body.prepend(editBanner);
     document.querySelector(".log-button").textContent = "logout";
     document.querySelector(".log-button").addEventListener("click", () => {
@@ -199,12 +199,12 @@ function deleteWork(event) {
         errorBox.className = "error-login";
         errorBox.innerHTML = "Il y a eu une erreur";
         document.querySelector(".modal-button-container").prepend(errorBox);
+      } else {
+        getWorks();
       }
     })
     .catch((error) => console.error("Erreur lors de la suppression:", error));
-  getWorks();
 }
-
 // Toggle entre les 2 modales
 function toggleModal() {
   const galleryModal = document.querySelector(".gallery-modal");
@@ -232,10 +232,19 @@ function handlePictureSubmit() {
   fileInput.addEventListener("change", function (event) {
     file = event.target.files[0];
     const maxFileSize = 4 * 1024 * 1024;
+    const allowedFormats = ["image/jpeg", "image/png"];
+    const allowedExtensions = ["jpg", "jpeg", "png"];
+    const fileExtension = file.name.split(".").pop().toLowerCase();
 
-    if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+    if (
+      file &&
+      allowedFormats.includes(file.type) &&
+      allowedExtensions.includes(fileExtension)
+    ) {
       if (file.size > maxFileSize) {
         alert("La taille de l'image ne doit pas dépasser 4 Mo.");
+        fileInput.value = "";
+        file = undefined;
         return;
       }
       const reader = new FileReader();
@@ -250,6 +259,8 @@ function handlePictureSubmit() {
         .forEach((e) => (e.style.display = "none"));
     } else {
       alert("Veuillez sélectionner une image au format JPG ou PNG.");
+      fileInput.value = "";
+      file = undefined;
     }
   });
 
@@ -270,6 +281,17 @@ function handlePictureSubmit() {
   addPictureForm.addEventListener("submit", function (event) {
     event.preventDefault();
     const hasImage = document.querySelector("#photo-container").firstChild;
+    const fileExtension = file ? file.name.split(".").pop().toLowerCase() : "";
+    const allowedExtensions = ["jpg", "jpeg", "png"];
+
+    if (
+      file &&
+      (!allowedExtensions.includes(fileExtension) ||
+        (file.type !== "image/jpeg" && file.type !== "image/png"))
+    ) {
+      alert("Veuillez sélectionner une image au format JPG ou PNG.");
+      return;
+    }
 
     if (hasImage && titleValue) {
       const formData = new FormData();
@@ -299,12 +321,24 @@ function handlePictureSubmit() {
               errorBox.innerHTML = `Il y a eu une erreur : ${errorText}`;
               document.querySelector("form").prepend(errorBox);
             });
+          } else {
+            getWorks();
+            toggleModal();
+
+            addPictureForm.reset();
+            img.src = "";
+            img.alt = "";
+            document.getElementById("photo-container").innerHTML = "";
+            document
+              .querySelectorAll(".picture-loaded")
+              .forEach((e) => (e.style.display = ""));
+            titleValue = "";
+            selectedValue = "1";
           }
         })
         .catch((error) => console.error(error));
     } else {
       alert("Veuillez remplir tous les champs");
     }
-    getWorks();
   });
 }

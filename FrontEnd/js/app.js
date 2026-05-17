@@ -1,4 +1,6 @@
 const url = "http://localhost:5678/api";
+let allWorks = [];
+let currentFilter = null;
 
 getWorks();
 getCategories();
@@ -11,32 +13,37 @@ const backButton = document.querySelector(".js-modal-back");
 addPhotoButton.addEventListener("click", toggleModal);
 backButton.addEventListener("click", toggleModal);
 
-// Recuperation des travaux avec options de passer les filtres en parametres
-function getWorks(filter) {
+// Recuperation des travaux depuis l'API
+function getWorks() {
   fetch(`${url}/works`)
     .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Response status: ${response.status}`);
       return response.json();
     })
     .then((json) => {
-      document.querySelector(".gallery").innerHTML = "";
-      document.querySelector(".modal-gallery").innerHTML = "";
-      const items = filter
-        ? json.filter((data) => data.categoryId === filter)
-        : json;
-      for (let i = 0; i < items.length; i++) {
-        setFigure(items[i]);
-        setFigureModal(items[i]);
-      }
-
-      const trashCans = document.querySelectorAll(".fa-trash-can");
-      trashCans.forEach((e) =>
-        e.addEventListener("click", (event) => deleteWork(event)),
-      );
+      allWorks = json;
+      renderWorks();
     })
     .catch((error) => console.error(error.message));
+}
+
+// Affichage des travaux selon le filtre actif
+function renderWorks() {
+  document.querySelector(".gallery").innerHTML = "";
+  document.querySelector(".modal-gallery").innerHTML = "";
+
+  const items = currentFilter
+    ? allWorks.filter((data) => data.categoryId === currentFilter)
+    : allWorks;
+
+  items.forEach((data) => {
+    setFigure(data);
+    setFigureModal(data);
+  });
+
+  document
+    .querySelectorAll(".fa-trash-can")
+    .forEach((e) => e.addEventListener("click", (event) => deleteWork(event)));
 }
 
 // Integration a la galerie des figures (image + titre)
@@ -62,15 +69,11 @@ function setFigureModal(data) {
 function getCategories() {
   fetch(`${url}/categories`)
     .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Response status: ${response.status}`);
       return response.json();
     })
     .then((json) => {
-      for (let i = 0; i < json.length; i++) {
-        setFilter(json[i]);
-      }
+      json.forEach((data) => setFilter(data));
     })
     .catch((error) => console.error(error.message));
 }
@@ -79,16 +82,16 @@ function getCategories() {
 function setFilter(data) {
   const div = document.createElement("div");
   div.className = data.id;
-  div.addEventListener("click", () => getWorks(data.id));
+  div.addEventListener("click", () => {
+    currentFilter = data.id;
+    renderWorks();
+  });
   div.addEventListener("click", (event) => toggleFilter(event));
-  document
-    .querySelector(".tous")
-    .addEventListener("click", (event) => toggleFilter(event));
   div.innerHTML = `${data.name}`;
   document.querySelector(".div-container").append(div);
 }
 
-// Affichage du filtre actif et des "figures" associées
+// Affichage du filtre actif
 function toggleFilter(event) {
   const container = document.querySelector(".div-container");
   Array.from(container.children).forEach((child) =>
@@ -97,7 +100,13 @@ function toggleFilter(event) {
   event.target.classList.add("active-filter");
 }
 
-document.querySelector(".tous").addEventListener("click", () => getWorks());
+document.querySelector(".tous").addEventListener("click", () => {
+  currentFilter = null;
+  renderWorks();
+});
+document
+  .querySelector(".tous")
+  .addEventListener("click", (event) => toggleFilter(event));
 
 // Utilisateur authentifié
 function displayAdminMode() {
@@ -200,11 +209,13 @@ function deleteWork(event) {
         errorBox.innerHTML = "Il y a eu une erreur";
         document.querySelector(".modal-button-container").prepend(errorBox);
       } else {
-        getWorks();
+        allWorks = allWorks.filter((work) => work.id !== parseInt(id));
+        renderWorks();
       }
     })
     .catch((error) => console.error("Erreur lors de la suppression:", error));
 }
+
 // Toggle entre les 2 modales
 function toggleModal() {
   const galleryModal = document.querySelector(".gallery-modal");
@@ -281,9 +292,9 @@ function handlePictureSubmit() {
   addPictureForm.addEventListener("submit", function (event) {
     event.preventDefault();
     const hasImage = document.querySelector("#photo-container").firstChild;
+
     const fileExtension = file ? file.name.split(".").pop().toLowerCase() : "";
     const allowedExtensions = ["jpg", "jpeg", "png"];
-
     if (
       file &&
       (!allowedExtensions.includes(fileExtension) ||
@@ -322,18 +333,20 @@ function handlePictureSubmit() {
               document.querySelector("form").prepend(errorBox);
             });
           } else {
-            getWorks();
-            toggleModal();
-
-            addPictureForm.reset();
-            img.src = "";
-            img.alt = "";
-            document.getElementById("photo-container").innerHTML = "";
-            document
-              .querySelectorAll(".picture-loaded")
-              .forEach((e) => (e.style.display = ""));
-            titleValue = "";
-            selectedValue = "1";
+            return response.json().then((newWork) => {
+              allWorks.push(newWork);
+              renderWorks();
+              toggleModal();
+              addPictureForm.reset();
+              img.src = "";
+              img.alt = "";
+              document.getElementById("photo-container").innerHTML = "";
+              document
+                .querySelectorAll(".picture-loaded")
+                .forEach((e) => (e.style.display = ""));
+              titleValue = "";
+              selectedValue = "1";
+            });
           }
         })
         .catch((error) => console.error(error));

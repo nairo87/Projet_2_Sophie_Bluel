@@ -1,6 +1,7 @@
 const url = "http://localhost:5678/api";
 let allWorks = [];
 let currentFilter = null;
+let allCategories = [];
 
 getWorks();
 getCategories();
@@ -73,9 +74,23 @@ function getCategories() {
       return response.json();
     })
     .then((json) => {
+      allCategories = json;
       json.forEach((data) => setFilter(data));
+      renderCategories();
     })
     .catch((error) => console.error(error.message));
+}
+
+function renderCategories() {
+  const select = document.getElementById("category");
+  select.innerHTML = "";
+
+  allCategories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.innerHTML = category.name;
+    select.appendChild(option);
+  });
 }
 
 // Ajout des eventListeners aux filtres

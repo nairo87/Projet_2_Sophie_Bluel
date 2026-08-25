@@ -1,6 +1,6 @@
 # Portfolio-architecte-sophie-bluel
 
-Code du projet 3d'intégrateur web.
+Code du projet 3 d'intégrateur web.
 
 ## Architecture
 
